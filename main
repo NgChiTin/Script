@@ -1,0 +1,94 @@
+-- ==========================================================
+-- CẤU HÌNH ĐƯỜNG DẪN (QUAN TRỌNG: SỬA DÒNG NÀY THEO GAME CỦA BẠN)
+-- ==========================================================
+-- Ví dụ: game.Players.LocalPlayer.Pets hoặc game.Players.LocalPlayer.Inventory
+-- Hãy dùng Dex Explorer để tìm đúng folder chứa Pet
+local PathToPets = game.Players.LocalPlayer:WaitForChild("Pets") 
+
+-- ==========================================================
+-- KHỞI TẠO RAYFIELD UI
+-- ==========================================================
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Pet UID Tools - Rayfield",
+   LoadingTitle = "Đang tải Script...",
+   LoadingSubtitle = "by Gemini",
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil, 
+      FileName = "PetTools"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink", 
+      RememberJoins = true 
+   },
+   KeySystem = false, -- Tắt hệ thống key cho nhanh
+})
+
+local Tab = Window:CreateTab("Pet Scanner", 4483362458) -- Icon bất kỳ
+
+-- ==========================================================
+-- CHỨC NĂNG
+-- ==========================================================
+
+local Section = Tab:CreateSection("Danh Sách Pet")
+
+-- Hàm lấy danh sách Pet và UID
+local function GetPetList()
+    local options = {}
+    
+    if PathToPets then
+        for _, v in pairs(PathToPets:GetChildren()) do
+            -- Ở đây mình giả định UID chính là Tên của Folder (dựa trên log bạn gửi)
+            -- Nếu UID nằm trong Value khác, bạn sửa v.Name thành v.UniqueId.Value
+            table.insert(options, v.Name)
+        end
+    else
+        table.insert(options, "Không tìm thấy thư mục Pet!")
+    end
+    
+    return options
+end
+
+-- Tạo Dropdown để hiển thị UID
+local PetDropdown = Tab:CreateDropdown({
+   Name = "Chọn Pet để Copy UID",
+   Options = {"Bấm 'Làm mới' để quét..."},
+   CurrentOption = {"Bấm 'Làm mới' để quét..."},
+   MultipleOptions = false,
+   Flag = "PetDropdown", -- ID để lưu config
+   Callback = function(Options)
+      -- Khi người dùng chọn 1 dòng, code này sẽ chạy
+      for _, selectedUID in pairs(Options) do
+          if selectedUID ~= "Bấm 'Làm mới' để quét..." and selectedUID ~= "Không tìm thấy thư mục Pet!" then
+              setclipboard(selectedUID) -- Copy vào bộ nhớ tạm
+              Rayfield:Notify({
+                 Title = "Đã Copy!",
+                 Content = "UID: " .. selectedUID,
+                 Duration = 3,
+                 Image = 4483362458,
+              })
+          end
+      end
+   end,
+})
+
+-- Nút Làm mới danh sách (Refresh)
+Tab:CreateButton({
+   Name = "Làm mới / Quét lại danh sách Pet",
+   Callback = function()
+       local newOptions = GetPetList()
+       PetDropdown:Refresh(newOptions) -- Cập nhật lại Dropdown
+       Rayfield:Notify({
+           Title = "Hoàn tất",
+           Content = "Đã quét xong danh sách Pet!",
+           Duration = 2,
+           Image = 4483362458,
+       })
+   end,
+})
+
+-- Thêm hướng dẫn
+Tab:CreateParagraph({Title = "Hướng dẫn", Content = "1. Bấm nút 'Làm mới' để script quét túi đồ.\n2. Bấm vào menu chọn Pet, chọn mã UID bạn muốn.\n3. Script sẽ tự động Copy UID, bạn chỉ cần Ctrl+V vào chỗ cần dùng."})
